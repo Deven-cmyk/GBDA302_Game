@@ -27,7 +27,8 @@ let pressedKeys = {};
 let fogLayer;
 let vampire;
 let vampireImg, playerImg, keyImg, tableImg, deathImg, doorImg;
-let shakeX = 0, shakeY = 0;
+let shakeX = 0,
+  shakeY = 0;
 
 // Tile map
 let tileWallImg, tileCornerImg, tileFloorImg;
@@ -37,12 +38,13 @@ let mapCols = 50;
 let mapRows = 40;
 
 // Tutorial / intro
-let tutorialStartX = 0, tutorialStartY = 0;
+let tutorialStartX = 0,
+  tutorialStartY = 0;
 let tutorialIntroDismissed = false;
 
 // Smooth room-to-room fade transition
 let fadeActive = false;
-let fadePhase = "";      // "out" | "in"
+let fadePhase = ""; // "out" | "in"
 let fadeAlpha = 0;
 let fadeCallback = null;
 
@@ -57,23 +59,61 @@ let nextStrobe = 0;
 // Audio
 let bgMusic, whisperSound, musicFilter, whisperFilter;
 let seenSound, gameoverSound;
-let musicReady = false, whisperReady = false;
-let seenReady = false, gameoverReady = false;
+let musicReady = false,
+  whisperReady = false;
+let seenReady = false,
+  gameoverReady = false;
 let wantAudio = false;
 let whisperVol = 0;
 
 // ---------------------------------------------------------------------
 function preload() {
-  tileWallImg   = loadImage("assets/images/wall.png",   () => {}, () => {});
-  tileCornerImg = loadImage("assets/images/corner.png", () => {}, () => {});
-  tileFloorImg  = loadImage("assets/images/floor.png",  () => {}, () => {});
-  playerImg     = loadImage("assets/images/mainguy2.png", () => {}, () => {});
-  vampireImg    = loadImage("assets/images/Vampire.png", () => {}, () => {});
-  keyImg        = loadImage("assets/images/key.png",     () => {}, () => {});
-  tableImg      = loadImage("assets/images/table.png",   () => {}, () => {});
-  deathImg      = loadImage("assets/images/death.png",   () => {}, () => {});
-  doorImg       = loadImage("assets/images/Door.png",     () => {}, () => {});
-  tileMapData   = loadJSON("data/blocks.json");
+  tileWallImg = loadImage(
+    "assets/images/wall.png",
+    () => {},
+    () => {},
+  );
+  tileCornerImg = loadImage(
+    "assets/images/corner.png",
+    () => {},
+    () => {},
+  );
+  tileFloorImg = loadImage(
+    "assets/images/floor.png",
+    () => {},
+    () => {},
+  );
+  playerImg = loadImage(
+    "assets/images/mainguy2.png",
+    () => {},
+    () => {},
+  );
+  vampireImg = loadImage(
+    "assets/images/Vampire.png",
+    () => {},
+    () => {},
+  );
+  keyImg = loadImage(
+    "assets/images/key.png",
+    () => {},
+    () => {},
+  );
+  tableImg = loadImage(
+    "assets/images/table.png",
+    () => {},
+    () => {},
+  );
+  deathImg = loadImage(
+    "assets/images/death.png",
+    () => {},
+    () => {},
+  );
+  doorImg = loadImage(
+    "assets/images/Door.png",
+    () => {},
+    () => {},
+  );
+  tileMapData = loadJSON("data/blocks.json");
 }
 
 function setup() {
@@ -103,24 +143,36 @@ function loadAudio() {
   try {
     bgMusic = loadSound(
       "assets/sounds/scarymusic.mp3",
-      () => { musicReady = true; setupMusic(); maybeStartAudio(); },
-      () => console.warn("scarymusic.mp3 not found — music disabled.")
+      () => {
+        musicReady = true;
+        setupMusic();
+        maybeStartAudio();
+      },
+      () => console.warn("scarymusic.mp3 not found — music disabled."),
     );
     whisperSound = loadSound(
       "assets/sounds/whisper.mp3",
-      () => { whisperReady = true; setupWhisper(); maybeStartAudio(); },
-      () => console.warn("whisper.mp3 not found — whisper disabled.")
+      () => {
+        whisperReady = true;
+        setupWhisper();
+        maybeStartAudio();
+      },
+      () => console.warn("whisper.mp3 not found — whisper disabled."),
     );
     // One-shot scare stings (kept clear/unmuffled on purpose)
     seenSound = loadSound(
       "assets/sounds/seen.mp3",
-      () => { seenReady = true; },
-      () => console.warn("seen.mp3 not found — disabled.")
+      () => {
+        seenReady = true;
+      },
+      () => console.warn("seen.mp3 not found — disabled."),
     );
     gameoverSound = loadSound(
       "assets/sounds/gameover.mp3",
-      () => { gameoverReady = true; },
-      () => console.warn("gameover.mp3 not found — disabled.")
+      () => {
+        gameoverReady = true;
+      },
+      () => console.warn("gameover.mp3 not found — disabled."),
     );
   } catch (e) {
     console.warn("p5.sound unavailable:", e);
@@ -129,13 +181,15 @@ function loadAudio() {
 
 function setupMusic() {
   try {
-    musicFilter = new p5.LowPass();   // muffle (deaf perspective)
+    musicFilter = new p5.LowPass(); // muffle (deaf perspective)
     musicFilter.freq(480);
     musicFilter.res(2);
     bgMusic.disconnect();
     bgMusic.connect(musicFilter);
     bgMusic.setVolume(0.0);
-  } catch (e) { /* filter optional */ }
+  } catch (e) {
+    /* filter optional */
+  }
 }
 
 function setupWhisper() {
@@ -145,27 +199,40 @@ function setupWhisper() {
     whisperSound.disconnect();
     whisperSound.connect(whisperFilter);
     whisperSound.setVolume(0.0);
-  } catch (e) { /* filter optional */ }
+  } catch (e) {
+    /* filter optional */
+  }
 }
 
 function playOneShot(snd, ready, vol) {
   if (!ready || !snd) return;
-  try { snd.setVolume(vol); snd.play(); } catch (e) {}
+  try {
+    snd.setVolume(vol);
+    snd.play();
+  } catch (e) {}
 }
 
 function startAudio() {
   wantAudio = true;
-  try { if (typeof userStartAudio === "function") userStartAudio(); } catch (e) {}
+  try {
+    if (typeof userStartAudio === "function") userStartAudio();
+  } catch (e) {}
   maybeStartAudio();
 }
 
 function maybeStartAudio() {
   if (!wantAudio) return;
   if (musicReady && bgMusic && !bgMusic.isPlaying()) {
-    try { bgMusic.setVolume(0.18); bgMusic.loop(); } catch (e) {}
+    try {
+      bgMusic.setVolume(0.1);
+      bgMusic.loop();
+    } catch (e) {}
   }
   if (whisperReady && whisperSound && !whisperSound.isPlaying()) {
-    try { whisperSound.setVolume(0.0); whisperSound.loop(); } catch (e) {}
+    try {
+      whisperSound.setVolume(0.0);
+      whisperSound.loop();
+    } catch (e) {}
   }
 }
 
@@ -173,28 +240,34 @@ function maybeStartAudio() {
 // the closer the vampire gets, loud when it's right beside you.
 function updateWhisper() {
   if (!whisperReady || !whisperSound) return;
-  const near = 45, far = 800, maxV = 0.85;
+  const near = 45,
+    far = 800,
+    maxV = 0.85;
   let d = dist(player.x, player.y, vampire.x, vampire.y);
   let v;
   if (d >= far) {
     v = 0;
   } else {
     let t = constrain(1 - (d - near) / (far - near), 0, 1); // 1 close -> 0 far
-    let proximity = maxV * pow(t, 1.5);          // steep ramp = noticeable
+    let proximity = maxV * pow(t, 1.5); // steep ramp = noticeable
     let floorFade = constrain((far - d) / 140, 0, 1);
-    let floorVol = 0.14 * floorFade;             // still hear it a bit when far
+    let floorVol = 0.14 * floorFade; // still hear it a bit when far
     v = max(floorVol, proximity);
   }
   whisperVol = lerp(whisperVol, v, 0.15);
-  try { whisperSound.setVolume(whisperVol); } catch (e) {}
+  try {
+    whisperSound.setVolume(whisperVol);
+  } catch (e) {}
 }
 
 // ---------------------------------------------------------------------
 //  LEVEL SETUP
 // ---------------------------------------------------------------------
 function initTutorial() {
-  const rx = 100, ry = 140;
-  const cols = 15, rows = 13;
+  const rx = 100,
+    ry = 140;
+  const cols = 15,
+    rows = 13;
 
   player = {
     x: rx + 2 * TILE_SIZE + TILE_SIZE / 2,
@@ -209,11 +282,16 @@ function initTutorial() {
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      let isWall = (row === 0 || row === rows - 1 || col === 0);
-      let isDoorOpening = (col === cols - 1 && row >= 5 && row <= 7);
+      let isWall = row === 0 || row === rows - 1 || col === 0;
+      let isDoorOpening = col === cols - 1 && row >= 5 && row <= 7;
       if (col === cols - 1 && !isDoorOpening) isWall = true;
       if (isWall) {
-        walls.push({ x: rx + col * TILE_SIZE, y: ry + row * TILE_SIZE, w: TILE_SIZE, h: TILE_SIZE });
+        walls.push({
+          x: rx + col * TILE_SIZE,
+          y: ry + row * TILE_SIZE,
+          w: TILE_SIZE,
+          h: TILE_SIZE,
+        });
       }
     }
   }
@@ -260,10 +338,20 @@ function initGame() {
       for (let col = 0; col < mapCols; col++) {
         let ch = line[col] || ".";
         if ("LRUBNESWCT".indexOf(ch) !== -1) {
-          walls.push({ x: col * TILE_SIZE, y: row * TILE_SIZE, w: TILE_SIZE, h: TILE_SIZE });
+          walls.push({
+            x: col * TILE_SIZE,
+            y: row * TILE_SIZE,
+            w: TILE_SIZE,
+            h: TILE_SIZE,
+          });
         }
         if (ch === "T") {
-          tables.push({ x: col * TILE_SIZE, y: row * TILE_SIZE, w: TILE_SIZE, h: TILE_SIZE });
+          tables.push({
+            x: col * TILE_SIZE,
+            y: row * TILE_SIZE,
+            w: TILE_SIZE,
+            h: TILE_SIZE,
+          });
         }
       }
     }
@@ -301,7 +389,11 @@ function pickRandomKeyTile(spawnX, spawnY) {
   if (!(tileMapData && tileMapData.tiles)) return { x: 1300, y: 950 };
   const tiles = tileMapData.tiles;
   const isFloor = (c, r) =>
-    r >= 0 && r < mapRows && c >= 0 && c < mapCols && (tiles[r][c] || ".") === ".";
+    r >= 0 &&
+    r < mapRows &&
+    c >= 0 &&
+    c < mapCols &&
+    (tiles[r][c] || ".") === ".";
 
   const startC = floor(spawnX / TILE_SIZE);
   const startR = floor(spawnY / TILE_SIZE);
@@ -312,9 +404,17 @@ function pickRandomKeyTile(spawnX, spawnY) {
   while (queue.length) {
     const [c, r] = queue.shift();
     reachable.push([c, r]);
-    for (const [nc, nr] of [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]]) {
+    for (const [nc, nr] of [
+      [c + 1, r],
+      [c - 1, r],
+      [c, r + 1],
+      [c, r - 1],
+    ]) {
       const k = nc + "," + nr;
-      if (!seen.has(k) && isFloor(nc, nr)) { seen.add(k); queue.push([nc, nr]); }
+      if (!seen.has(k) && isFloor(nc, nr)) {
+        seen.add(k);
+        queue.push([nc, nr]);
+      }
     }
   }
 
@@ -326,7 +426,10 @@ function pickRandomKeyTile(spawnX, spawnY) {
 
   const pool = candidates.length ? candidates : reachable;
   const pick = pool[floor(random(pool.length))];
-  return { x: pick[0] * TILE_SIZE + TILE_SIZE / 2, y: pick[1] * TILE_SIZE + TILE_SIZE / 2 };
+  return {
+    x: pick[0] * TILE_SIZE + TILE_SIZE / 2,
+    y: pick[1] * TILE_SIZE + TILE_SIZE / 2,
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -342,7 +445,8 @@ function draw() {
 
   updateFlicker();
 
-  const frozen = fadeActive || (gameState === "tutorial" && !tutorialIntroDismissed);
+  const frozen =
+    fadeActive || (gameState === "tutorial" && !tutorialIntroDismissed);
 
   if (!frozen) {
     if (gameState === "tutorial") {
@@ -397,9 +501,9 @@ function computeShake() {
   shakeY = 0;
   if (gameState !== "play") return;
 
-  if (millis() - vampire.shakeStartTime < 500) {
-    shakeX = random(-11, 11);
-    shakeY = random(-11, 11);
+  if (millis() - vampire.shakeStartTime < 600) {
+    shakeX = random(-34, 34);
+    shakeY = random(-34, 34);
   }
   if (vampire.state === "chasing") {
     let d = dist(player.x, player.y, vampire.x, vampire.y);
@@ -449,7 +553,8 @@ function updateFlicker() {
 //  PLAYER MOVEMENT
 // ---------------------------------------------------------------------
 function updatePlayer() {
-  let moveX = 0, moveY = 0;
+  let moveX = 0,
+    moveY = 0;
 
   if (keyIsDown(LEFT_ARROW)) moveX -= PLAYER_SPEED;
   if (keyIsDown(RIGHT_ARROW)) moveX += PLAYER_SPEED;
@@ -469,10 +574,16 @@ function movePlayer(dx, dy) {
   const nextX = player.x + dx;
   const nextY = player.y + dy;
 
-  if (!collidesWithWalls(nextX, player.y) && !collidesWithDoor(nextX, player.y)) {
+  if (
+    !collidesWithWalls(nextX, player.y) &&
+    !collidesWithDoor(nextX, player.y)
+  ) {
     player.x = nextX;
   }
-  if (!collidesWithWalls(player.x, nextY) && !collidesWithDoor(player.x, nextY)) {
+  if (
+    !collidesWithWalls(player.x, nextY) &&
+    !collidesWithDoor(player.x, nextY)
+  ) {
     player.y = nextY;
   }
 
@@ -483,16 +594,34 @@ function movePlayer(dx, dy) {
 function collidesWithWalls(cx, cy) {
   if (gameState !== "tutorial" && tileMapData && tileMapData.tiles) {
     let colLeft = constrain(floor((cx - player.r) / TILE_SIZE), 0, mapCols - 1);
-    let colRight = constrain(floor((cx + player.r) / TILE_SIZE), 0, mapCols - 1);
+    let colRight = constrain(
+      floor((cx + player.r) / TILE_SIZE),
+      0,
+      mapCols - 1,
+    );
     let rowTop = constrain(floor((cy - player.r) / TILE_SIZE), 0, mapRows - 1);
-    let rowBottom = constrain(floor((cy + player.r) / TILE_SIZE), 0, mapRows - 1);
+    let rowBottom = constrain(
+      floor((cy + player.r) / TILE_SIZE),
+      0,
+      mapRows - 1,
+    );
 
     for (let r = rowTop; r <= rowBottom; r++) {
       let line = tileMapData.tiles[r] || "";
       for (let c = colLeft; c <= colRight; c++) {
         let ch = line[c] || ".";
         if ("LRUBNESWCT".indexOf(ch) !== -1) {
-          if (circleRectCollision(cx, cy, player.r, c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)) {
+          if (
+            circleRectCollision(
+              cx,
+              cy,
+              player.r,
+              c * TILE_SIZE,
+              r * TILE_SIZE,
+              TILE_SIZE,
+              TILE_SIZE,
+            )
+          ) {
             return true;
           }
         }
@@ -502,7 +631,8 @@ function collidesWithWalls(cx, cy) {
   }
 
   for (let wall of walls) {
-    if (circleRectCollision(cx, cy, player.r, wall.x, wall.y, wall.w, wall.h)) return true;
+    if (circleRectCollision(cx, cy, player.r, wall.x, wall.y, wall.w, wall.h))
+      return true;
   }
   return false;
 }
@@ -534,9 +664,11 @@ function checkKeyPickup() {
 
 function checkWinCondition() {
   if (!player.hasKey) return;
-  if (player.x > door.x + door.w &&
-      player.y > door.y - player.r &&
-      player.y < door.y + door.h + player.r) {
+  if (
+    player.x > door.x + door.w &&
+    player.y > door.y - player.r &&
+    player.y < door.y + door.h + player.r
+  ) {
     gameState = "win";
   }
 }
@@ -548,7 +680,7 @@ function updateVampire() {
     if (inCone) {
       if (!vampire.wasInCone) {
         vampire.shakeStartTime = millis();
-        playOneShot(seenSound, seenReady, 0.7); // metal shriek scare
+        playOneShot(seenSound, seenReady, 0.1); // barely-there sting
       }
       vampire.state = "stunned";
       vampire.stunTimer = millis();
@@ -592,7 +724,8 @@ function drawRoom() {
 
       let ch = line[col] || ".";
       let rotationAngle = 0;
-      let isWall = false, isCorner = false;
+      let isWall = false,
+        isCorner = false;
 
       if (ch === "L" || ch === "B" || ch === "R" || ch === "U") {
         isWall = true;
@@ -637,8 +770,10 @@ function drawTile(img, x, y, rotationAngle, fallback) {
 }
 
 function drawTutorialRoom() {
-  const rx = 100, ry = 140;
-  const cols = 15, rows = 13;
+  const rx = 100,
+    ry = 140;
+  const cols = 15,
+    rows = 13;
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -646,13 +781,14 @@ function drawTutorialRoom() {
       let y = ry + row * TILE_SIZE;
       if (tileFloorImg) image(tileFloorImg, x, y, TILE_SIZE, TILE_SIZE);
 
-      let isWall = (row === 0 || row === rows - 1 || col === 0);
-      let isDoorOpening = (col === cols - 1 && row >= 5 && row <= 7);
+      let isWall = row === 0 || row === rows - 1 || col === 0;
+      let isDoorOpening = col === cols - 1 && row >= 5 && row <= 7;
       if (col === cols - 1 && !isDoorOpening) isWall = true;
       if (isWall) drawTile(tileWallImg, x, y, 0, color(100, 100, 170));
     }
   }
-  for (let tbl of tables) drawTile(tableImg, tbl.x, tbl.y, 0, color(139, 90, 43));
+  for (let tbl of tables)
+    drawTile(tableImg, tbl.x, tbl.y, 0, color(139, 90, 43));
 }
 
 function drawKey() {
@@ -667,7 +803,10 @@ function drawKey() {
   ellipse(0, 0, 72 + 12 * pulse);
   imageMode(CENTER);
   if (keyImg && keyImg.width) image(keyImg, 0, 0, 58, 58);
-  else { fill(240, 210, 80); ellipse(0, 0, 42); }
+  else {
+    fill(240, 210, 80);
+    ellipse(0, 0, 42);
+  }
   pop();
 }
 
@@ -692,7 +831,10 @@ function drawDoor() {
   } else {
     fill(door.isOpen ? color(80, 200, 120) : color(200, 80, 80));
     rect(door.x, door.y, door.w, door.h, 4);
-    if (!door.isOpen) { fill(120); rect(door.x + 8, door.y + door.h / 2, 8, 36, 4); }
+    if (!door.isOpen) {
+      fill(120);
+      rect(door.x + 8, door.y + door.h / 2, 8, 36, 4);
+    }
   }
   pop();
 }
@@ -703,8 +845,13 @@ function drawPlayer() {
   push();
   translate(player.x, player.y);
   rotate(angle);
-  if (playerImg && playerImg.width) image(playerImg, 0, 0, player.r * 2.4, player.r * 2.4);
-  else { noStroke(); fill(220); ellipse(0, 0, player.r * 2); }
+  if (playerImg && playerImg.width)
+    image(playerImg, 0, 0, player.r * 2.4, player.r * 2.4);
+  else {
+    noStroke();
+    fill(220);
+    ellipse(0, 0, player.r * 2);
+  }
   pop();
 }
 
@@ -715,8 +862,13 @@ function drawVampire() {
   push();
   translate(vampire.x, vampire.y);
   rotate(angle);
-  if (vampireImg && vampireImg.width) image(vampireImg, 0, 0, vampire.r * 2.4, vampire.r * 2.4);
-  else { noStroke(); fill(150, 20, 20); ellipse(0, 0, vampire.r * 2); }
+  if (vampireImg && vampireImg.width)
+    image(vampireImg, 0, 0, vampire.r * 2.4, vampire.r * 2.4);
+  else {
+    noStroke();
+    fill(150, 20, 20);
+    ellipse(0, 0, vampire.r * 2);
+  }
   pop();
 }
 
@@ -746,13 +898,16 @@ function buildLightDeltas(cx, cy, targetAngle, occluders) {
   let deltas = [-half, half];
 
   const fan = 56;
-  for (let i = 0; i <= fan; i++) deltas.push(-half + FLASHLIGHT_ANGLE * (i / fan));
+  for (let i = 0; i <= fan; i++)
+    deltas.push(-half + FLASHLIGHT_ANGLE * (i / fan));
 
   const eps = 0.0009;
   for (let o of occluders) {
     let corners = [
-      [o.x, o.y], [o.x + o.w, o.y],
-      [o.x, o.y + o.h], [o.x + o.w, o.y + o.h],
+      [o.x, o.y],
+      [o.x + o.w, o.y],
+      [o.x, o.y + o.h],
+      [o.x + o.w, o.y + o.h],
     ];
     for (let c of corners) {
       if (dist(cx, cy, c[0], c[1]) > FLASHLIGHT_DISTANCE + 4) continue;
@@ -768,7 +923,8 @@ function buildLightDeltas(cx, cy, targetAngle, occluders) {
 }
 
 function drawFog() {
-  let cxw = player.x, cyw = player.y;
+  let cxw = player.x,
+    cyw = player.y;
   let targetAngle = atan2(mouseY + camera.y - cyw, mouseX + camera.x - cxw);
 
   // Darker ambient overall. This stays constant during a flicker so only the
@@ -793,7 +949,8 @@ function drawFog() {
     let p = traceRay(cxw, cyw, targetAngle + d, occ);
     pts.push({ x: p.x - camera.x, y: p.y - camera.y });
   }
-  let cx = cxw - camera.x, cy = cyw - camera.y;
+  let cx = cxw - camera.x,
+    cy = cyw - camera.y;
 
   // Carve the lit cone out of the fog with a soft feathered edge (wrap light).
   let ctx = fogLayer.drawingContext;
@@ -810,10 +967,17 @@ function drawFog() {
   image(fogLayer, 0, 0);
 
   // Warm radial glow clipped to the same polygon.
-  let g = drawingContext.createRadialGradient(cx, cy, 0, cx, cy, FLASHLIGHT_DISTANCE);
-  g.addColorStop(0,   "rgba(255, 226, 150, 0.22)");
+  let g = drawingContext.createRadialGradient(
+    cx,
+    cy,
+    0,
+    cx,
+    cy,
+    FLASHLIGHT_DISTANCE,
+  );
+  g.addColorStop(0, "rgba(255, 226, 150, 0.22)");
   g.addColorStop(0.5, "rgba(255, 210, 120, 0.10)");
-  g.addColorStop(1,   "rgba(255, 200, 100, 0.0)");
+  g.addColorStop(1, "rgba(255, 200, 100, 0.0)");
   drawingContext.save();
   drawingContext.fillStyle = g;
   drawingContext.beginPath();
@@ -825,7 +989,8 @@ function drawFog() {
 }
 
 function traceRay(startX, startY, angle, occluders) {
-  let rayX = cos(angle), rayY = sin(angle);
+  let rayX = cos(angle),
+    rayY = sin(angle);
   let closestDist = FLASHLIGHT_DISTANCE;
   let list = occluders || walls;
   for (let wall of list) {
@@ -836,12 +1001,14 @@ function traceRay(startX, startY, angle, occluders) {
 }
 
 function rayAABBIntersection(startX, startY, dirX, dirY, wall) {
-  let tMin = 0, tMax = FLASHLIGHT_DISTANCE;
+  let tMin = 0,
+    tMax = FLASHLIGHT_DISTANCE;
   if (abs(dirX) > 0.001) {
     let t1 = (wall.x - startX) / dirX;
     let t2 = (wall.x + wall.w - startX) / dirX;
     if (t1 > t2) [t1, t2] = [t2, t1];
-    tMin = max(tMin, t1); tMax = min(tMax, t2);
+    tMin = max(tMin, t1);
+    tMax = min(tMax, t2);
   } else if (startX < wall.x || startX > wall.x + wall.w) {
     return null;
   }
@@ -849,7 +1016,8 @@ function rayAABBIntersection(startX, startY, dirX, dirY, wall) {
     let t1 = (wall.y - startY) / dirY;
     let t2 = (wall.y + wall.h - startY) / dirY;
     if (t1 > t2) [t1, t2] = [t2, t1];
-    tMin = max(tMin, t1); tMax = min(tMax, t2);
+    tMin = max(tMin, t1);
+    tMax = min(tMax, t2);
   } else if (startY < wall.y || startY > wall.y + wall.h) {
     return null;
   }
@@ -859,26 +1027,69 @@ function rayAABBIntersection(startX, startY, dirX, dirY, wall) {
 
 function isInFlashlight(x, y) {
   if (!lightOn) return false;
-  let targetAngle = atan2(mouseY + camera.y - player.y, mouseX + camera.x - player.x);
+  let targetAngle = atan2(
+    mouseY + camera.y - player.y,
+    mouseX + camera.x - player.x,
+  );
   let pointAngle = atan2(y - player.y, x - player.x);
   let angleDiff = abs(angleDifference(pointAngle, targetAngle));
   let distance = dist(player.x, player.y, x, y);
-  if (distance >= FLASHLIGHT_DISTANCE || angleDiff >= FLASHLIGHT_ANGLE / 2) return false;
+  if (distance >= FLASHLIGHT_DISTANCE || angleDiff >= FLASHLIGHT_ANGLE / 2)
+    return false;
 
   for (let wall of walls) {
     if (isLineRectIntersecting(player.x, player.y, x, y, wall)) return false;
   }
-  if (!door.isOpen && isLineRectIntersecting(player.x, player.y, x, y, door)) return false;
+  if (!door.isOpen && isLineRectIntersecting(player.x, player.y, x, y, door))
+    return false;
   return true;
 }
 
 function isLineRectIntersecting(x1, y1, x2, y2, wall) {
-  if (lineIntersect(x1, y1, x2, y2, wall.x, wall.y, wall.x + wall.w, wall.y)) return true;
-  if (lineIntersect(x1, y1, x2, y2, wall.x, wall.y + wall.h, wall.x + wall.w, wall.y + wall.h)) return true;
-  if (lineIntersect(x1, y1, x2, y2, wall.x, wall.y, wall.x, wall.y + wall.h)) return true;
-  if (lineIntersect(x1, y1, x2, y2, wall.x + wall.w, wall.y, wall.x + wall.w, wall.y + wall.h)) return true;
-  if (x1 >= wall.x && x1 <= wall.x + wall.w && y1 >= wall.y && y1 <= wall.y + wall.h) return true;
-  if (x2 >= wall.x && x2 <= wall.x + wall.w && y2 >= wall.y && y2 <= wall.y + wall.h) return true;
+  if (lineIntersect(x1, y1, x2, y2, wall.x, wall.y, wall.x + wall.w, wall.y))
+    return true;
+  if (
+    lineIntersect(
+      x1,
+      y1,
+      x2,
+      y2,
+      wall.x,
+      wall.y + wall.h,
+      wall.x + wall.w,
+      wall.y + wall.h,
+    )
+  )
+    return true;
+  if (lineIntersect(x1, y1, x2, y2, wall.x, wall.y, wall.x, wall.y + wall.h))
+    return true;
+  if (
+    lineIntersect(
+      x1,
+      y1,
+      x2,
+      y2,
+      wall.x + wall.w,
+      wall.y,
+      wall.x + wall.w,
+      wall.y + wall.h,
+    )
+  )
+    return true;
+  if (
+    x1 >= wall.x &&
+    x1 <= wall.x + wall.w &&
+    y1 >= wall.y &&
+    y1 <= wall.y + wall.h
+  )
+    return true;
+  if (
+    x2 >= wall.x &&
+    x2 <= wall.x + wall.w &&
+    y2 >= wall.y &&
+    y2 <= wall.y + wall.h
+  )
+    return true;
   return false;
 }
 
@@ -916,7 +1127,8 @@ function drawStartScreen() {
   let size = 100;
   textSize(size);
   while (textWidth("HEAR NO EVIL") > width - 70 && size > 40) {
-    size -= 2; textSize(size);
+    size -= 2;
+    textSize(size);
   }
   fill(35, 0, 0);
   text("HEAR NO EVIL", width / 2 + 5, height / 2 - 86 + 5);
@@ -941,8 +1153,10 @@ function drawTutorialIntro() {
   fill(0, 150);
   rect(0, 0, width, height);
 
-  let bw = 600, bh = 240;
-  let bx = width / 2 - bw / 2, by = height / 2 - bh / 2;
+  let bw = 600,
+    bh = 240;
+  let bx = width / 2 - bw / 2,
+    by = height / 2 - bh / 2;
   fill(45);
   stroke(95);
   strokeWeight(2);
@@ -958,7 +1172,11 @@ function drawTutorialIntro() {
 
   fill(190);
   textSize(15);
-  text("WASD to move   •   move your cursor to aim the light", width / 2, by + 150);
+  text(
+    "WASD to move   •   move your cursor to aim the light",
+    width / 2,
+    by + 150,
+  );
 
   let a = 150 + 105 * sin(millis() / 400);
   fill(215, 215, 215, a);
@@ -988,14 +1206,29 @@ function drawUI() {
   text("Look: cursor", 18, 50);
 
   textAlign(RIGHT, BASELINE);
-  if (player.hasKey) { fill(120, 220, 120); text("Key: obtained", width - 18, 28); }
-  else { fill(220, 120, 120); text("Key: missing", width - 18, 28); }
+  if (player.hasKey) {
+    fill(120, 220, 120);
+    text("Key: obtained", width - 18, 28);
+  } else {
+    fill(220, 120, 120);
+    text("Key: missing", width - 18, 28);
+  }
 
   fill(255, 200);
   textAlign(CENTER, BASELINE);
   textSize(14);
-  if (!player.hasKey) text("The locked door glows red until you find the key.", width / 2, height - 24);
-  else text("Door unlocked — slip through the green opening to escape.", width / 2, height - 24);
+  if (!player.hasKey)
+    text(
+      "The locked door glows red until you find the key.",
+      width / 2,
+      height - 24,
+    );
+  else
+    text(
+      "Door unlocked — slip through the green opening to escape.",
+      width / 2,
+      height - 24,
+    );
   textAlign(LEFT, BASELINE);
 }
 
@@ -1044,9 +1277,11 @@ function drawGameOverScreen() {
 // ---------------------------------------------------------------------
 function checkTutorialCompletion() {
   if (fadeActive || !player.hasKey) return;
-  if (player.x > door.x + door.w &&
-      player.y > door.y - player.r &&
-      player.y < door.y + door.h + player.r) {
+  if (
+    player.x > door.x + door.w &&
+    player.y > door.y - player.r &&
+    player.y < door.y + door.h + player.r
+  ) {
     startFade(() => initGame());
   }
 }
@@ -1064,12 +1299,19 @@ function drawFade() {
     fadeAlpha += 12;
     if (fadeAlpha >= 255) {
       fadeAlpha = 255;
-      if (fadeCallback) { fadeCallback(); fadeCallback = null; }
+      if (fadeCallback) {
+        fadeCallback();
+        fadeCallback = null;
+      }
       fadePhase = "in";
     }
   } else if (fadePhase === "in") {
     fadeAlpha -= 12;
-    if (fadeAlpha <= 0) { fadeAlpha = 0; fadeActive = false; fadePhase = ""; }
+    if (fadeAlpha <= 0) {
+      fadeAlpha = 0;
+      fadeActive = false;
+      fadePhase = "";
+    }
   }
   push();
   noStroke();
@@ -1082,14 +1324,25 @@ function drawFade() {
 //  INPUT
 // ---------------------------------------------------------------------
 function handleAdvance() {
-  if (gameState === "start") { startAudio(); initTutorial(); return; }
-  if (gameState === "tutorial" && !tutorialIntroDismissed) { tutorialIntroDismissed = true; return; }
+  if (gameState === "start") {
+    startAudio();
+    initTutorial();
+    return;
+  }
+  if (gameState === "tutorial" && !tutorialIntroDismissed) {
+    tutorialIntroDismissed = true;
+    return;
+  }
 }
 
 function keyPressed() {
   if (key && key.length === 1) pressedKeys[key] = true;
   if (key === " " || keyCode === 32) handleAdvance();
-  if ((key === "r" || key === "R") && (gameState === "win" || gameState === "gameover")) restartGame();
+  if (
+    (key === "r" || key === "R") &&
+    (gameState === "win" || gameState === "gameover")
+  )
+    restartGame();
 }
 
 function keyReleased() {
