@@ -224,7 +224,7 @@ function maybeStartAudio() {
   if (!wantAudio) return;
   if (musicReady && bgMusic && !bgMusic.isPlaying()) {
     try {
-      bgMusic.setVolume(0.1);
+      bgMusic.setVolume(0.01);
       bgMusic.loop();
     } catch (e) {}
   }
@@ -680,7 +680,7 @@ function updateVampire() {
     if (inCone) {
       if (!vampire.wasInCone) {
         vampire.shakeStartTime = millis();
-        playOneShot(seenSound, seenReady, 0.1); // barely-there sting
+        playOneShot(seenSound, seenReady, 0.01); // nearly inaudible
       }
       vampire.state = "stunned";
       vampire.stunTimer = millis();
