@@ -78,7 +78,7 @@ let breathingVol = 0;
 let playerMoveAmount = 0;
 
 // Kill-cam (plays before the death screen)
-const DEATH_CAM_MS = 1200;
+const DEATH_CAM_MS = 1500;
 let deathStart = 0;
 let killPos = null;
 
@@ -296,6 +296,7 @@ function maybeStartAudio() {
     try {
       breathingSound.setVolume(0.0);
       breathingSound.loop();
+      if (typeof breathingSound.rate === "function") breathingSound.rate(0.9); // ~10% slower
     } catch (e) {}
   }
 }
@@ -324,8 +325,8 @@ function updateWhisper() {
 
   // Direction based on his real left/right position relative to you.
   let panX = constrain((vampire.x - player.x) / 300, -1, 1);
-  // Left ear is more deaf: only 60% on the far left, full on the right.
-  let earFactor = panX < 0 ? lerp(1.0, 0.6, -panX) : 1.0;
+  // Left ear is more deaf: only 40% on the far left, full on the right.
+  let earFactor = panX < 0 ? lerp(1.0, 0.4, -panX) : 1.0;
 
   try {
     whisperSound.setVolume(whisperVol * earFactor);
@@ -352,7 +353,7 @@ function updateMovementAudio() {
   }
 
   if (breathingReady && breathingSound) {
-    let target = moving ? 0.26 : 0.05; // quieter when slowed/stopped
+    let target = moving ? 0.18 : 0.035; // quieter when slowed/stopped
     breathingVol = lerp(breathingVol, target, 0.08);
     try {
       breathingSound.setVolume(breathingVol);
