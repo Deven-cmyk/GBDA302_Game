@@ -326,7 +326,7 @@ function updateWhisper() {
   // Direction based on his real left/right position relative to you.
   let panX = constrain((vampire.x - player.x) / 300, -1, 1);
   // Left ear is more deaf: only 40% on the far left, full on the right.
-  let earFactor = panX < 0 ? lerp(1.0, 0.4, -panX) : 1.0;
+  let earFactor = panX < 0 ? lerp(1.0, 0.2, -panX) : 1.0;
 
   try {
     whisperSound.setVolume(whisperVol * earFactor);
@@ -353,7 +353,7 @@ function updateMovementAudio() {
   }
 
   if (breathingReady && breathingSound) {
-    let target = moving ? 0.18 : 0.035; // quieter when slowed/stopped
+    let target = moving ? 0.1 : 0.02; // quieter when slowed/stopped
     breathingVol = lerp(breathingVol, target, 0.08);
     try {
       breathingSound.setVolume(breathingVol);
