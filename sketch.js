@@ -59,12 +59,28 @@ let nextStrobe = 0;
 // Audio
 let bgMusic, whisperSound, musicFilter, whisperFilter;
 let seenSound, gameoverSound;
+let footstep1, footstep2, breathingSound, bodyFilter;
 let musicReady = false,
   whisperReady = false;
 let seenReady = false,
   gameoverReady = false;
+let footstep1Ready = false,
+  footstep2Ready = false,
+  breathingReady = false;
 let wantAudio = false;
 let whisperVol = 0;
+
+// Movement-driven body audio
+const STEP_INTERVAL = 360; // ms between footsteps (brisk walk)
+let footIndex = 0;
+let lastStepTime = 0;
+let breathingVol = 0;
+let playerMoveAmount = 0;
+
+// Kill-cam (plays before the death screen)
+const DEATH_CAM_MS = 1200;
+let deathStart = 0;
+let killPos = null;
 
 // ---------------------------------------------------------------------
 function preload() {
@@ -174,8 +190,50 @@ function loadAudio() {
       },
       () => console.warn("gameover.mp3 not found — disabled."),
     );
+    // Player body sounds (own footsteps + scared breathing), lightly muffled.
+    footstep1 = loadSound(
+      "assets/sounds/footstep1.mp3",
+      () => {
+        footstep1Ready = true;
+        connectBody(footstep1);
+      },
+      () => console.warn("footstep1.mp3 not found — disabled."),
+    );
+    footstep2 = loadSound(
+      "assets/sounds/footstep2.mp3",
+      () => {
+        footstep2Ready = true;
+        connectBody(footstep2);
+      },
+      () => console.warn("footstep2.mp3 not found — disabled."),
+    );
+    breathingSound = loadSound(
+      "assets/sounds/breathing.mp3",
+      () => {
+        breathingReady = true;
+        connectBody(breathingSound);
+        maybeStartAudio();
+      },
+      () => console.warn("breathing.mp3 not found — disabled."),
+    );
   } catch (e) {
     console.warn("p5.sound unavailable:", e);
+  }
+}
+
+// Shared light low-pass so the character's own body sounds feel muffled too.
+function connectBody(snd) {
+  try {
+    if (!bodyFilter) {
+      bodyFilter = new p5.LowPass();
+      bodyFilter.freq(1200);
+      bodyFilter.res(1);
+    }
+    snd.disconnect();
+    snd.connect(bodyFilter);
+    snd.setVolume(0.0);
+  } catch (e) {
+    /* filter optional */
   }
 }
 
@@ -234,10 +292,18 @@ function maybeStartAudio() {
       whisperSound.loop();
     } catch (e) {}
   }
+  if (breathingReady && breathingSound && !breathingSound.isPlaying()) {
+    try {
+      breathingSound.setVolume(0.0);
+      breathingSound.loop();
+    } catch (e) {}
+  }
 }
 
 // Proximity whisper: faintly audible even far off, ramping up sharply
 // the closer the vampire gets, loud when it's right beside you.
+// Directional: panned to the vampire's real side, and the left ear only
+// hears ~60% (that ear is more deaf).
 function updateWhisper() {
   if (!whisperReady || !whisperSound) return;
   const near = 45,
@@ -255,9 +321,43 @@ function updateWhisper() {
     v = max(floorVol, proximity);
   }
   whisperVol = lerp(whisperVol, v, 0.15);
+
+  // Direction based on his real left/right position relative to you.
+  let panX = constrain((vampire.x - player.x) / 300, -1, 1);
+  // Left ear is more deaf: only 60% on the far left, full on the right.
+  let earFactor = panX < 0 ? lerp(1.0, 0.6, -panX) : 1.0;
+
   try {
-    whisperSound.setVolume(whisperVol);
+    whisperSound.setVolume(whisperVol * earFactor);
+    if (typeof whisperSound.pan === "function") whisperSound.pan(panX, 0.1);
   } catch (e) {}
+}
+
+// Footsteps (two clips alternating while moving) + scared breathing that
+// rises with movement and drops when you slow or stop. Centered (own body).
+function updateMovementAudio() {
+  let moving = playerMoveAmount > 0.5;
+
+  if (moving && footstep1Ready && footstep2Ready) {
+    let now = millis();
+    if (now - lastStepTime >= STEP_INTERVAL) {
+      lastStepTime = now;
+      let s = footIndex === 0 ? footstep1 : footstep2;
+      footIndex = 1 - footIndex;
+      try {
+        s.setVolume(0.14); // there, but not loud
+        s.play();
+      } catch (e) {}
+    }
+  }
+
+  if (breathingReady && breathingSound) {
+    let target = moving ? 0.26 : 0.05; // quieter when slowed/stopped
+    breathingVol = lerp(breathingVol, target, 0.08);
+    try {
+      breathingSound.setVolume(breathingVol);
+    } catch (e) {}
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -451,10 +551,12 @@ function draw() {
   if (!frozen) {
     if (gameState === "tutorial") {
       updatePlayer();
+      updateMovementAudio();
       checkKeyPickup();
       checkTutorialCompletion();
     } else if (gameState === "play") {
       updatePlayer();
+      updateMovementAudio();
       updateVampire();
       checkKeyPickup();
       checkWinCondition();
@@ -473,16 +575,20 @@ function draw() {
   else drawRoom();
   pop();
 
-  drawFog();
+  if (gameState === "dying") {
+    drawDeathCam();
+  } else {
+    drawFog();
 
-  // Entities above fog
-  push();
-  translate(-camera.x + shakeX, -camera.y + shakeY);
-  drawDoor();
-  drawPlayer();
-  drawKey();
-  if (gameState === "play") drawVampire();
-  pop();
+    // Entities above fog
+    push();
+    translate(-camera.x + shakeX, -camera.y + shakeY);
+    drawDoor();
+    drawPlayer();
+    drawKey();
+    if (gameState === "play") drawVampire();
+    pop();
+  }
 
   // HUD
   if (gameState === "tutorial") drawTutorialUI();
@@ -499,6 +605,15 @@ function draw() {
 function computeShake() {
   shakeX = 0;
   shakeY = 0;
+
+  if (gameState === "dying") {
+    let t = constrain((millis() - deathStart) / DEATH_CAM_MS, 0, 1);
+    let amt = lerp(22, 4, t); // hard jolt that settles
+    shakeX = random(-amt, amt);
+    shakeY = random(-amt, amt);
+    return;
+  }
+
   if (gameState !== "play") return;
 
   if (millis() - vampire.shakeStartTime < 600) {
@@ -553,6 +668,8 @@ function updateFlicker() {
 //  PLAYER MOVEMENT
 // ---------------------------------------------------------------------
 function updatePlayer() {
+  let startX = player.x,
+    startY = player.y;
   let moveX = 0,
     moveY = 0;
 
@@ -568,6 +685,8 @@ function updatePlayer() {
 
   movePlayer(moveX, 0);
   movePlayer(0, moveY);
+
+  playerMoveAmount = dist(startX, startY, player.x, player.y);
 }
 
 function movePlayer(dx, dy) {
@@ -704,9 +823,81 @@ function updateVampire() {
 
 function checkVampireCatch() {
   if (dist(player.x, player.y, vampire.x, vampire.y) < 30) {
-    gameState = "gameover";
-    playOneShot(gameoverSound, gameoverReady, 0.7); // quick lose sting
+    startDeathCam();
   }
+}
+
+// Freeze on the grab, show him getting you, then hand off to the death screen.
+function startDeathCam() {
+  gameState = "dying";
+  deathStart = millis();
+  killPos = { vx: vampire.x, vy: vampire.y, px: player.x, py: player.y };
+  playOneShot(gameoverSound, gameoverReady, 0.7); // quick lose sting
+  // cut the ambient body/vampire audio for the kill
+  try {
+    if (whisperSound) whisperSound.setVolume(0);
+  } catch (e) {}
+  try {
+    if (breathingSound) breathingSound.setVolume(0);
+  } catch (e) {}
+  breathingVol = 0;
+}
+
+function drawDeathCam() {
+  let t = constrain((millis() - deathStart) / DEATH_CAM_MS, 0, 1);
+
+  let sx = killPos.px - camera.x + shakeX;
+  let sy = killPos.py - camera.y + shakeY;
+
+  // Spotlight the kill: dark everywhere, clear around the grab point.
+  let g = drawingContext.createRadialGradient(sx, sy, 20, sx, sy, 250);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(0.55, "rgba(0,0,0,0.2)");
+  g.addColorStop(1, "rgba(8,0,0,0.94)");
+  drawingContext.save();
+  drawingContext.fillStyle = g;
+  drawingContext.fillRect(0, 0, width, height);
+  drawingContext.restore();
+
+  // red flash that builds
+  noStroke();
+  fill(120, 0, 0, 30 + 110 * t);
+  rect(0, 0, width, height);
+
+  push();
+  translate(-camera.x + shakeX, -camera.y + shakeY);
+  imageMode(CENTER);
+
+  // player turns to face his attacker
+  let pAngle = atan2(killPos.vy - killPos.py, killPos.vx - killPos.px);
+  push();
+  translate(killPos.px, killPos.py);
+  rotate(pAngle);
+  if (playerImg && playerImg.width)
+    image(playerImg, 0, 0, PLAYER_RADIUS * 2.4, PLAYER_RADIUS * 2.4);
+  else {
+    fill(220);
+    ellipse(0, 0, PLAYER_RADIUS * 2);
+  }
+  pop();
+
+  // vampire lunges in and grows as he strikes
+  let lx = lerp(killPos.vx, killPos.px, 0.5 * t);
+  let ly = lerp(killPos.vy, killPos.py, 0.5 * t);
+  let vAngle = atan2(killPos.py - killPos.vy, killPos.px - killPos.vx);
+  let vs = 25 * 2.4 * (1 + 0.5 * t);
+  push();
+  translate(lx, ly);
+  rotate(vAngle);
+  if (vampireImg && vampireImg.width) image(vampireImg, 0, 0, vs, vs);
+  else {
+    fill(150, 20, 20);
+    ellipse(0, 0, vs);
+  }
+  pop();
+  pop();
+
+  if (t >= 1) gameState = "gameover";
 }
 
 // ---------------------------------------------------------------------
